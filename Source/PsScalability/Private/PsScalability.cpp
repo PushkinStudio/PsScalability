@@ -2,6 +2,8 @@
 
 #include "PsScalability.h"
 
+#include "Misc/ConfigCacheIni.h"
+
 #define LOCTEXT_NAMESPACE "FPsScalabilityModule"
 
 void FPsScalabilityModule::StartupModule()
