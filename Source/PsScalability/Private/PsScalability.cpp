@@ -3,22 +3,57 @@
 #include "PsScalability.h"
 
 #include "Misc/ConfigCacheIni.h"
+#include "Misc/CoreDelegates.h"
 
 #define LOCTEXT_NAMESPACE "FPsScalabilityModule"
 
-void FPsScalabilityModule::StartupModule()
+namespace ScalabilityModuleImpl
 {
-	TSet<FString> WhitelistSections = std::initializer_list<FString>({TEXT("ScalabilitySettings")});
+bool IsItScalabilityFile(const TCHAR* Filename)
+{
+	if (FCString::Strifind(Filename, TEXT("Scalability.ini")))
+	{
+		return true;
+	}
 
+	return false;
+}
+
+void ClearSection(const TCHAR* SectionName, const TCHAR* Filename)
+{
+	static const TSet<FString> WhitelistSections = std::initializer_list<FString>({TEXT("ScalabilitySettings")});
+
+	if (!WhitelistSections.Contains(SectionName))
+	{
+		GConfig->EmptySection(SectionName, Filename);
+	}
+}
+
+void ClearSections(const TCHAR* Filename)
+{
 	TArray<FString> SectionNames;
-	GConfig->GetSectionNames(GScalabilityIni, SectionNames);
+	GConfig->GetSectionNames(Filename, SectionNames);
 	for (const auto& Section : SectionNames)
 	{
-		if (!WhitelistSections.Contains(Section))
-		{
-			GConfig->EmptySection(*Section, GScalabilityIni);
-		}
+		ClearSection(*Section, Filename);
 	}
+}
+
+} // namespace ScalabilityModuleImpl
+
+void FPsScalabilityModule::StartupModule()
+{
+	ScalabilityModuleImpl::ClearSections(*GScalabilityIni);
+
+#if WITH_EDITOR
+	// Feature level switching
+	FCoreDelegates::OnConfigSectionRead.AddLambda([](const TCHAR* Filename, const TCHAR* SectionName) {
+		if (ScalabilityModuleImpl::IsItScalabilityFile(Filename))
+		{
+			ScalabilityModuleImpl::ClearSections(Filename);
+		}
+	});
+#endif //WITH_EDITOR
 }
 
 void FPsScalabilityModule::ShutdownModule()
