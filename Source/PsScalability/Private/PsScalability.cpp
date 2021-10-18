@@ -54,7 +54,7 @@ void FPsScalabilityModule::StartupModule()
 			ScalabilityModuleImpl::ClearSections(Filename);
 		}
 	});
-#endif //WITH_EDITOR
+#endif // WITH_EDITOR
 }
 
 void FPsScalabilityModule::ShutdownModule()
